@@ -6,6 +6,7 @@
     "dev": "pnpm -r dev",
     "dev:full": "pnpm --filter @coach/api exec -- prisma db push --accept-data-loss && pnpm --filter @coach/api seed && concurrently \"pnpm --filter @coach/api dev\" \"pnpm --filter web dev -- --open\"",
     "build": "pnpm -r build",
+    "start": "pnpm --filter @coach/api start",
     "lint": "pnpm -r lint",
     "smoke": "tsx scripts/smoke.ts"
   },
