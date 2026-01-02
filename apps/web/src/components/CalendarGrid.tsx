@@ -19,6 +19,12 @@ type StatusStyle = {
   background?: string;
 };
 
+type ResolvedStatus = {
+  label: string;
+  color: string;
+  background: string;
+};
+
 type CalendarGridProps = {
   events: CalendarGridEvent[];
   emptyLabel?: string;
@@ -111,8 +117,8 @@ export function CalendarGrid({ events, emptyLabel = "Aucune session", statusStyl
     return `Semaine du ${formatter.format(start)} au ${formatter.format(end)}`;
   }, [cursor]);
 
-  function resolveStatus(event: CalendarGridEvent) {
-    const fallback = event.status && statusStyles?.[event.status];
+  function resolveStatus(event: CalendarGridEvent): ResolvedStatus {
+    const fallback: StatusStyle | undefined = event.status ? statusStyles?.[event.status] : undefined;
     return {
       color: event.color ?? fallback?.color ?? "#0f172a",
       background: event.background ?? fallback?.background ?? "rgba(0,0,0,0.1)",

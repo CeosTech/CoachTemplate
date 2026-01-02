@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import { useAuthStore } from "../store/auth.store";
 import { PublicApi, type Brand, type SocialLink } from "../api/public";
 import { DEFAULT_SOCIAL_LINKS } from "../constants/socialPresets";
@@ -12,7 +12,7 @@ const navLinks = [
 
 const contentRoutes = ["/", "/shop", "/contact", "/payment", "/login", "/register", "/forgot-password", "/reset-password"];
 
-const SOCIAL_ICON_MAP: Record<string, JSX.Element> = {
+const SOCIAL_ICON_MAP: Record<string, ReactElement> = {
   instagram: (
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5">
       <rect x="3.5" y="3.5" width="17" height="17" rx="5" />

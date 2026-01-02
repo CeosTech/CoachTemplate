@@ -1977,6 +1977,20 @@ export function MemberCalendarPage() {
     setListModal(type);
   }
 
+  function handleCalendarEventClick(event: CalendarGridEvent) {
+    if (event.status === "AVAILABLE") {
+      const slot = availabilitySlots.find((item) => item.startAt === event.startAt);
+      if (slot) {
+        openBookingModal(slot);
+      } else {
+        setCalendarNotice("Créneau indisponible, recharge la page.");
+      }
+      return;
+    }
+    const booking = calendarBookingMap.get(event.id);
+    if (booking) setSelectedCalendarBooking(booking);
+  }
+
 
   return (
     <>
@@ -2267,16 +2281,3 @@ export function MemberSettingsPage() {
     </div>
   );
 }
-  function handleCalendarEventClick(event: CalendarGridEvent) {
-    if (event.status === "AVAILABLE") {
-      const slot = availabilitySlots.find((item) => item.startAt === event.startAt);
-      if (slot) {
-        openBookingModal(slot);
-      } else {
-        setCalendarNotice("Créneau indisponible, recharge la page.");
-      }
-      return;
-    }
-    const booking = calendarBookingMap.get(event.id);
-    if (booking) setSelectedCalendarBooking(booking);
-  }

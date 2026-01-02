@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
 
-type DashboardNavLink = {
+export type DashboardNavLink = {
   label: string;
   to: string;
   variant?: "primary" | "menu";

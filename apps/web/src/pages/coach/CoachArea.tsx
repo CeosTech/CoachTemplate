@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, Outlet, useOutletContext } from "react-router-dom";
 import { DashboardLayout } from "../../components/DashboardLayout";
-import { DashboardNav } from "../../components/DashboardNav";
+import { DashboardNav, type DashboardNavLink } from "../../components/DashboardNav";
 import { PaginationControls } from "../../components/Pagination";
 import { CalendarGrid, type CalendarGridEvent } from "../../components/CalendarGrid";
 import { useAuthStore, type AuthState } from "../../store/auth.store";
@@ -341,7 +341,7 @@ export function CoachLayout() {
     { label: "Paramètres", to: "/coach/settings", group: "Réglages" }
   ];
 
-  const coachNavLinks = [
+  const coachNavLinks: DashboardNavLink[] = [
     { label: "Vue d'ensemble", to: "/coach/overview", variant: "menu" },
     { label: "Calendrier", to: "/coach/calendar", variant: "menu" },
     { label: "Members", to: "/coach/members", variant: "menu" },
@@ -2384,7 +2384,7 @@ export function CoachVideosPage() {
             <button className="btn" type="submit" disabled={uploading}>
               {uploading ? "Upload en cours..." : "Publier la vidéo"}
             </button>
-            <button className="btn btn--ghost btn--small" type="button" onClick={refreshVideos} disabled={loading}>
+            <button className="btn btn--ghost btn--small" type="button" onClick={() => refreshVideos()} disabled={loading}>
               Actualiser la liste
             </button>
           </div>
