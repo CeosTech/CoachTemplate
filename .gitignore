@@ -1,0 +1,25 @@
+# PNPM / Node
+node_modules/
+pnpm-debug.log*
+*.tsbuildinfo
+
+# Builds
+dist/
+build/
+apps/web/dist/
+apps/api/dist/
+apps/api/prisma/dev.db
+apps/api/uploads/
+
+# Env & secrets
+.env
+.env.*
+apps/web/.env
+*.local
+
+# Tools & OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+tmp/

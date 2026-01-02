@@ -1,0 +1,21 @@
+{
+  "name": "coach-template",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "pnpm -r dev",
+    "dev:full": "pnpm --filter @coach/api exec -- prisma db push --accept-data-loss && pnpm --filter @coach/api seed && concurrently \"pnpm --filter @coach/api dev\" \"pnpm --filter web dev -- --open\"",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "smoke": "tsx scripts/smoke.ts"
+  },
+  "pnpm": {
+    "overrides": {
+      "esbuild": "0.21.5"
+    }
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "tsx": "^4.19.0"
+  }
+}

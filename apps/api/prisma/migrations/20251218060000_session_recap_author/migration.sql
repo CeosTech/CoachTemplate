@@ -1,0 +1,1 @@
+ALTER TABLE "SessionRecap" ADD COLUMN "authorRole" TEXT NOT NULL DEFAULT 'COACH';

@@ -1,0 +1,65 @@
+@import url("https://fonts.googleapis.com/css2?family=Chivo:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+:root {
+  --app-font: "Chivo", "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --accent-color: #0ea5e9;
+  --accent-secondary: #f97316;
+  --background-color: #ffffff;
+  font-family: var(--app-font);
+  line-height: 1.4;
+  font-weight: 400;
+  color: #e2e8f0;
+  background-color: var(--background-color);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--background-color);
+  color: #050505;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+p {
+  margin: 0;
+  opacity: 0.9;
+}
+
+button {
+  font: inherit;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  padding: 0.65em 0.85em;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: #fff;
+  color: #050505;
+  width: 100%;
+}
+
+textarea {
+  resize: vertical;
+}

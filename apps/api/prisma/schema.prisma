@@ -1,0 +1,343 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  role          String    // "COACH" | "MEMBER"
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  coachProfile  CoachProfile?
+  memberProfile MemberProfile?
+  bookings      Booking[] @relation("BookingUser")
+  resetTokens   PasswordResetToken[]
+}
+
+model CoachProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  brandName    String
+  tagline      String?
+  logoUrl      String?
+  primaryColor String?
+  isActive     Boolean  @default(true)
+
+  products       Product[]
+  availabilities Availability[]
+  bookings       Booking[] @relation("BookingCoach")
+  site           CoachSite?
+  integrations   CoachIntegrationSettings?
+  availabilityRules AvailabilityRule[]
+  programPlans   ProgramPlan[]
+  onboardingTemplates OnboardingTemplate[]
+  exerciseVideos ExerciseVideo[]
+}
+
+model MemberProfile {
+  id       String  @id @default(cuid())
+  userId   String  @unique
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fullName String?
+  goal     String?
+  level    String?
+  age      Int?
+  heightCm Int?
+  weightKg Int?
+  preferredTraining String?
+  limitations String?
+  isActivated Boolean @default(false)
+  notifications Notification[]
+  programNotes String?
+  followUpNotes String?
+  planUrl String?
+  payments Payment[]
+  memberPacks MemberPack[]
+  goals     Goal[]
+  checkIns  CheckIn[]
+  videoNotes VideoNote[]
+  sessionRecaps SessionRecap[]
+  assignedPrograms ProgramPlan[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  coachId     String
+  coach       CoachProfile @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  priceCents  Int
+  isActive    Boolean  @default(true)
+  checkoutUrl String?
+  billingInterval String? // e.g. MONTHLY, ONE_TIME
+  activeSubscribers Int? @default(0)
+  creditValue Int?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  memberPacks MemberPack[]
+}
+
+model Availability {
+  id        String   @id @default(cuid())
+  coachId   String
+  coach     CoachProfile @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  startAt   DateTime
+  endAt     DateTime
+
+  createdAt DateTime @default(now())
+}
+
+model AvailabilityRule {
+  id           String   @id @default(cuid())
+  coachId      String
+  coach        CoachProfile @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  weekday      Int
+  startMinutes Int
+  endMinutes   Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Booking {
+  id        String   @id @default(cuid())
+
+  coachId   String
+  coach     CoachProfile @relation("BookingCoach", fields: [coachId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User     @relation("BookingUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  startAt   DateTime
+  endAt     DateTime
+  notes     String?
+  memberNotes String?
+  coachNotes  String?
+  status    String   @default("PENDING")
+  confirmedAt DateTime?
+  cancelledAt DateTime?
+  paymentId String?
+  payment   Payment? @relation("PaymentBookings", fields: [paymentId], references: [id])
+  packId    String?
+  pack      MemberPack? @relation(fields: [packId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([coachId, startAt, endAt])
+}
+
+model MemberPack {
+  id               String   @id @default(cuid())
+  memberId         String
+  member           MemberProfile @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  productId        String
+  product          Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  paymentId        String?
+  payment          Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  status           String   @default("ACTIVE")
+  totalCredits     Int?
+  creditsRemaining Int?
+  metadata         String?
+  activatedAt      DateTime @default(now())
+  expiresAt        DateTime?
+  createdAt        DateTime @default(now())
+  bookings         Booking[]
+}
+
+model CoachSite {
+  id                String   @id @default(cuid())
+  coachId           String   @unique
+  coach             CoachProfile @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  heroEyebrow       String?
+  heroTitle         String?
+  heroHighlight     String?
+  heroDescription   String?
+  heroPrimaryImage  String?
+  heroSecondaryImage String?
+  heroStats         String?
+  features          String?
+  focusBlocks       String?
+  coachName         String?
+  coachRole         String?
+  coachBio          String?
+  coachPhoto        String?
+  coachStats        String?
+  testimonials      String?
+  reviews           String?
+  methodSteps       String?
+  carouselSlides    String?
+  palette           String?
+  fontFamily        String?
+  ctaPrimary        String?
+  ctaSecondary      String?
+  socialLinks       String?
+  promoBar          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model CoachIntegrationSettings {
+  id                 String   @id @default(cuid())
+  coachId            String   @unique
+  coach              CoachProfile @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  stripePublicKey    String?
+  stripeSecretKey    String?
+  stripeWebhookSecret String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  fullName  String
+  email     String
+  subject   String
+  message   String
+  status    String   @default("NEW")
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  memberId  String?
+  member    MemberProfile? @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  status    String   @default("UNREAD")
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  memberId    String
+  member      MemberProfile @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  amountCents Int
+  currency    String   @default("EUR")
+  method      String   // STRIPE | CASH
+  status      String   @default("PENDING") // PENDING, PAID, FAILED, REFUNDED
+  providerRef String?
+  notes       String?
+  metadata    String?
+  createdAt   DateTime @default(now())
+  bookings    Booking[] @relation("PaymentBookings")
+  memberPacks MemberPack[]
+}
+
+model Goal {
+  id          String   @id @default(cuid())
+  memberId    String
+  member      MemberProfile @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  title       String
+  targetDate  DateTime?
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+}
+
+model CheckIn {
+  id          String   @id @default(cuid())
+  memberId    String
+  member      MemberProfile @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  metric      String
+  value       String
+  notes       String?
+  createdAt   DateTime @default(now())
+}
+
+model VideoNote {
+  id          String   @id @default(cuid())
+  memberId    String
+  member      MemberProfile @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  url         String
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+model ExerciseVideo {
+  id          String   @id @default(cuid())
+  coachId     String
+  coach       CoachProfile @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  category    String
+  videoUrl    String
+  fileKey     String?
+  createdAt   DateTime @default(now())
+}
+
+model SessionRecap {
+  id           String   @id @default(cuid())
+  memberId     String
+  member       MemberProfile @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  sessionDate  DateTime  @default(now())
+  focus        String?
+  intensity    String?
+  notes        String?
+  exercisesJson String?
+  authorRole   String   @default("COACH")
+  createdAt    DateTime @default(now())
+}
+
+model ProgramPlan {
+  id            String   @id @default(cuid())
+  coachId       String
+  coach         CoachProfile @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  memberId      String?
+  member        MemberProfile? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  title         String
+  goal          String?
+  deliveryNotes String?
+  workoutsJson  String
+  shareToken    String   @unique
+  isArchived    Boolean  @default(false)
+  assignedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model OnboardingTemplate {
+  id          String   @id @default(cuid())
+  coachId     String
+  coach       CoachProfile @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  steps       OnboardingTemplateStep[]
+}
+
+model OnboardingTemplateStep {
+  id            String   @id @default(cuid())
+  templateId    String
+  template      OnboardingTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?
+  dueOffsetDays Int?
+  autoEmail     Boolean  @default(false)
+  autoSms       Boolean  @default(false)
+  orderIndex    Int      @default(0)
+  createdAt     DateTime @default(now())
+}
