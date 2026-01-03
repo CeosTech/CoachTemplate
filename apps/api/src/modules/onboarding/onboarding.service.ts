@@ -34,17 +34,17 @@ async function ensureTable() {
   if (!tableReady) {
     tableReady = prisma
       .$executeRawUnsafe(`
-        CREATE TABLE IF NOT EXISTS OnboardingStep (
-          id TEXT PRIMARY KEY,
-          memberId TEXT NOT NULL,
-          title TEXT NOT NULL,
-          description TEXT,
-          status TEXT NOT NULL DEFAULT 'PENDING',
-          dueDate DATETIME,
-          orderIndex INTEGER DEFAULT 0,
-          completedAt DATETIME,
-          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (memberId) REFERENCES MemberProfile(id) ON DELETE CASCADE
+        CREATE TABLE IF NOT EXISTS "OnboardingStep" (
+          "id" TEXT PRIMARY KEY,
+          "memberId" TEXT NOT NULL,
+          "title" TEXT NOT NULL,
+          "description" TEXT,
+          "status" TEXT NOT NULL DEFAULT 'PENDING',
+          "dueDate" TIMESTAMPTZ,
+          "orderIndex" INTEGER DEFAULT 0,
+          "completedAt" TIMESTAMPTZ,
+          "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          FOREIGN KEY ("memberId") REFERENCES "MemberProfile"("id") ON DELETE CASCADE
         )
       `)
       .then(() => undefined);
@@ -55,10 +55,10 @@ async function ensureTable() {
 async function listByMemberId(memberId: string) {
   await ensureTable();
   return prisma.$queryRaw<OnboardingStepRecord[]>`
-    SELECT id, memberId, title, description, status, dueDate, orderIndex, completedAt, createdAt
-    FROM OnboardingStep
-    WHERE memberId = ${memberId}
-    ORDER BY orderIndex ASC
+    SELECT "id", "memberId", "title", "description", "status", "dueDate", "orderIndex", "completedAt", "createdAt"
+    FROM "OnboardingStep"
+    WHERE "memberId" = ${memberId}
+    ORDER BY "orderIndex" ASC
   `;
 }
 
@@ -80,9 +80,9 @@ async function ensureMemberExists(memberId: string) {
 async function fetchStep(stepId: string) {
   await ensureTable();
   const [step] = await prisma.$queryRaw<OnboardingStepRecord[]>`
-    SELECT id, memberId, title, description, status, dueDate, orderIndex, completedAt, createdAt
-    FROM OnboardingStep
-    WHERE id = ${stepId}
+    SELECT "id", "memberId", "title", "description", "status", "dueDate", "orderIndex", "completedAt", "createdAt"
+    FROM "OnboardingStep"
+    WHERE "id" = ${stepId}
   `;
   return step ? normalize(step) : null;
 }
@@ -120,7 +120,7 @@ async function insertBlueprints(memberId: string, steps: TemplateStepInput[]) {
   const filtered = steps.filter((step) => step.title && step.title.trim().length > 0);
   if (filtered.length === 0) return;
   const [orderInfo] = await prisma.$queryRaw<Array<{ nextIndex: number | null }>>`
-    SELECT COALESCE(MAX(orderIndex), -1) + 1 as nextIndex FROM OnboardingStep WHERE memberId = ${memberId}
+    SELECT COALESCE(MAX("orderIndex"), -1) + 1 as nextIndex FROM "OnboardingStep" WHERE "memberId" = ${memberId}
   `;
   let index = orderInfo?.nextIndex ?? 0;
   const now = Date.now();
@@ -131,8 +131,8 @@ async function insertBlueprints(memberId: string, steps: TemplateStepInput[]) {
       const id = randomUUID();
       const orderIndex = index++;
       return prisma.$executeRaw`
-        INSERT INTO OnboardingStep (id, memberId, title, description, status, dueDate, orderIndex)
-        VALUES (${id}, ${memberId}, ${step.title}, ${step.description ?? null}, 'PENDING', ${dueDate ? dueDate.toISOString() : null}, ${orderIndex})
+        INSERT INTO "OnboardingStep" ("id", "memberId", "title", "description", "status", "dueDate", "orderIndex")
+        VALUES (${id}, ${memberId}, ${step.title}, ${step.description ?? null}, 'PENDING', ${dueDate ?? null}, ${orderIndex})
       `;
     })
   );
@@ -161,7 +161,7 @@ export const onboardingService = {
   async seedForMember(memberId: string) {
     await ensureTable();
     const existing = await prisma.$queryRaw<Array<{ id: string }>>`
-      SELECT id FROM OnboardingStep WHERE memberId = ${memberId}
+      SELECT "id" FROM "OnboardingStep" WHERE "memberId" = ${memberId}
     `;
     if (existing.length > 0) return;
     const blueprints = await loadTemplateBlueprints();
@@ -190,14 +190,14 @@ export const onboardingService = {
     if (!member) throw Object.assign(new Error("Member not found"), { status: 404 });
     await ensureTable();
     const [current] = await prisma.$queryRaw<OnboardingStepRecord[]>`
-      SELECT * FROM OnboardingStep WHERE id = ${stepId}
+      SELECT * FROM "OnboardingStep" WHERE "id" = ${stepId}
     `;
     if (!current || current.memberId !== member.id) throw Object.assign(new Error("Step not found"), { status: 404 });
     const completedAt = status === "COMPLETED" ? new Date() : null;
     await prisma.$executeRaw`
-      UPDATE OnboardingStep
-      SET status = ${status}, completedAt = ${completedAt ? completedAt.toISOString() : null}
-      WHERE id = ${stepId}
+      UPDATE "OnboardingStep"
+      SET "status" = ${status}, "completedAt" = ${completedAt ?? null}
+      WHERE "id" = ${stepId}
     `;
     return normalize({ ...current, status, completedAt: completedAt ?? null });
   },
@@ -205,11 +205,11 @@ export const onboardingService = {
   async coachAlerts() {
     await ensureTable();
     const alerts = await prisma.$queryRaw<Array<OnboardingStepRecord & { fullName?: string | null }>>`
-      SELECT s.id, s.memberId, s.title, s.description, s.status, s.dueDate, s.orderIndex, s.completedAt, s.createdAt, m.fullName
-      FROM OnboardingStep s
-      JOIN MemberProfile m ON m.id = s.memberId
-      WHERE s.status != 'COMPLETED' AND s.dueDate IS NOT NULL AND s.dueDate <= datetime('now')
-      ORDER BY s.dueDate ASC
+      SELECT s."id", s."memberId", s."title", s."description", s."status", s."dueDate", s."orderIndex", s."completedAt", s."createdAt", m."fullName"
+      FROM "OnboardingStep" s
+      JOIN "MemberProfile" m ON m."id" = s."memberId"
+      WHERE s."status" != 'COMPLETED' AND s."dueDate" IS NOT NULL AND s."dueDate" <= NOW()
+      ORDER BY s."dueDate" ASC
       LIMIT 16
     `;
     return alerts.map(normalize);
@@ -222,15 +222,15 @@ export const onboardingService = {
     const status = payload.status ?? "PENDING";
     const dueDate = payload.dueDate ? new Date(payload.dueDate) : null;
     const [order] = await prisma.$queryRaw<Array<{ nextIndex: number | null }>>`
-      SELECT COALESCE(MAX(orderIndex), -1) + 1 as nextIndex FROM OnboardingStep WHERE memberId = ${memberId}
+      SELECT COALESCE(MAX("orderIndex"), -1) + 1 as nextIndex FROM "OnboardingStep" WHERE "memberId" = ${memberId}
     `;
     const orderIndex = order?.nextIndex ?? 0;
     const id = randomUUID();
     const completedAt = status === "COMPLETED" ? new Date() : null;
     await prisma.$executeRaw`
-      INSERT INTO OnboardingStep (id, memberId, title, description, status, dueDate, orderIndex, completedAt)
-      VALUES (${id}, ${memberId}, ${payload.title}, ${payload.description ?? null}, ${status}, ${dueDate ? dueDate.toISOString() : null}, ${orderIndex}, ${
-      completedAt ? completedAt.toISOString() : null
+      INSERT INTO "OnboardingStep" ("id", "memberId", "title", "description", "status", "dueDate", "orderIndex", "completedAt")
+      VALUES (${id}, ${memberId}, ${payload.title}, ${payload.description ?? null}, ${status}, ${dueDate ?? null}, ${orderIndex}, ${
+      completedAt ?? null
     })
     `;
     return normalize({
@@ -260,13 +260,13 @@ export const onboardingService = {
     const dueDate = payload.dueDate === undefined ? current.dueDate : payload.dueDate ? new Date(payload.dueDate) : null;
     const completedAt = status === "COMPLETED" ? current.completedAt ?? new Date() : status === "PENDING" ? null : current.completedAt;
     await prisma.$executeRaw`
-      UPDATE OnboardingStep
-      SET title = ${title},
-          description = ${description ?? null},
-          status = ${status},
-          dueDate = ${dueDate ? dueDate.toISOString() : null},
-          completedAt = ${completedAt ? completedAt.toISOString() : null}
-      WHERE id = ${stepId}
+      UPDATE "OnboardingStep"
+      SET "title" = ${title},
+          "description" = ${description ?? null},
+          "status" = ${status},
+          "dueDate" = ${dueDate ?? null},
+          "completedAt" = ${completedAt ?? null}
+      WHERE "id" = ${stepId}
     `;
     return normalize({
       ...current,
@@ -283,7 +283,7 @@ export const onboardingService = {
     const current = await fetchStep(stepId);
     if (!current || current.memberId !== memberId) throw Object.assign(new Error("Step introuvable"), { status: 404 });
     await prisma.$executeRaw`
-      DELETE FROM OnboardingStep WHERE id = ${stepId}
+      DELETE FROM "OnboardingStep" WHERE "id" = ${stepId}
     `;
   },
 
