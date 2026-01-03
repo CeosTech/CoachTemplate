@@ -7,10 +7,9 @@ export async function requireActiveMember(req: AuthedRequest, res: Response, nex
     return res.status(403).json({ message: "Forbidden" });
   }
 
-  const profile = await prisma.memberProfile.findUnique({ where: { userId: req.user.id }, select: { isActivated: true } });
-  if (!profile?.isActivated) {
-    return res.status(402).json({ message: "Paiement requis pour accéder au dashboard." });
-  }
+  // Accès libre : on laisse les membres explorer le dashboard même sans pack actif.
+  // L'achat peut être réalisé directement depuis l'espace membre.
+  await prisma.memberProfile.findUnique({ where: { userId: req.user.id }, select: { isActivated: true } });
 
   next();
 }
